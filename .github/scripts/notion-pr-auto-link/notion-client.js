@@ -92,13 +92,18 @@ class NotionClient {
     };
     
     // Task relation if taskPageId is provided
-    if (prData.taskPageId && config.taskRelationProperty) {
-      properties[config.taskRelationProperty || 'Related Task'] = {
+    if (prData.taskPageId) {
+      const relationProperty = config.taskRelationProperty || 'Related Task';
+      properties[relationProperty] = {
         relation: [
           { id: prData.taskPageId }
         ]
       };
-      console.log(`Adding task relation to PR creation: ${prData.taskPageId}`);
+      console.log(`Adding task relation to PR creation:`);
+      console.log(`  Task Page ID: ${prData.taskPageId}`);
+      console.log(`  Relation Property: ${relationProperty}`);
+    } else {
+      console.log('No taskPageId provided, skipping relation');
     }
     
     if (prData.authorName) {
@@ -134,7 +139,7 @@ class NotionClient {
    * @param {string} [relationProperty='Related Task'] - Name of relation property
    * @returns {Promise<Object>} Updated PR page object
    */
-  async linkPRToTask(prPageId, taskPageId, relationProperty = 'Related Task', config = this.config) {
+  async linkPRToTask(prPageId, taskPageId, relationProperty = 'Related Task') {
     if (!prPageId) throw new Error('prPageId is required');
     if (!taskPageId) throw new Error('taskPageId is required');
     
@@ -284,6 +289,18 @@ class NotionClient {
     const existingPage = await this.findPRPage(databaseId, prData.number, config);
     if (existingPage) {
       console.log(`Found existing PR page for PR #${prData.number}`);
+      
+      // Update relation if taskPageId is provided
+      if (prData.taskPageId) {
+        const relationProperty = config.taskRelationProperty || 'Related Task';
+        console.log(`Updating existing PR page with task relation:`);
+        console.log(`  PR Page ID: ${existingPage.id}`);
+        console.log(`  Task Page ID: ${prData.taskPageId}`);
+        console.log(`  Relation Property: ${relationProperty}`);
+        
+        await this.linkPRToTask(existingPage.id, prData.taskPageId, relationProperty, config);
+      }
+      
       return existingPage;
     }
     
