@@ -257,6 +257,7 @@ node .github/scripts/notion-pr-auto-link/tests/test-integration.js
 
 ```
 action.yml                           # GitHub Action 定義
+LICENSE                              # MIT License
 .github/
 └── scripts/
     └── notion-pr-auto-link/
@@ -270,3 +271,7 @@ action.yml                           # GitHub Action 定義
             ├── test-extract-task-id.js
             └── ...
 ```
+
+## ライセンス
+
+このプロジェクトは [MIT License](LICENSE) の下で公開されています。
