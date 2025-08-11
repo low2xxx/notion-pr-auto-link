@@ -36,8 +36,8 @@ GitHub ActionsとNotion APIを連携して、PRを自動的にNotionタスクと
 - `NOTION_PR_DB_ID`: PR データベースのID
 - `NOTION_TASK_DB_ID`: タスクデータベースのID
 
-**オプション（組織固有の場合）:**
-- `TASK_ID_PREFIX`: タスクIDのプレフィックス（例: `YJ-B-TASK`）
+**オプション:**
+- `TASK_ID_PREFIX`: タスクIDのプレフィックス
 
 ### 3. ブランチ命名規則
 
