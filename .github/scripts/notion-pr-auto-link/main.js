@@ -85,22 +85,52 @@ async function main(context, github) {
  */
 async function postComment(github, context, prPage, taskPage) {
   try {
-    const prPageUrl = `https://notion.so/${prPage.id.replace(/-/g, '')}`;
-    let comment = `✅ PR has been linked to Notion\n\n`;
-    comment += `📝 [PR Page in Notion](${prPageUrl})\n`;
-    
     if (taskPage) {
+      // タスクページのタイトルを取得
       const taskPageUrl = `https://notion.so/${taskPage.id.replace(/-/g, '')}`;
-      comment += `🎯 [Task Page in Notion](${taskPageUrl})\n`;
+      
+      // タスクのタイトルを取得（最初のtextプロパティを探す）
+      let taskTitle = 'Task';
+      if (taskPage.properties) {
+        // Title, Name, タイトル, 名前などの一般的なタイトルプロパティを探す
+        const titleProps = ['Title', 'Name', 'タイトル', '名前', 'title', 'name'];
+        for (const prop of titleProps) {
+          if (taskPage.properties[prop]) {
+            const titleProp = taskPage.properties[prop];
+            if (titleProp.title && titleProp.title[0]) {
+              taskTitle = titleProp.title[0].plain_text || titleProp.title[0].text?.content || 'Task';
+              break;
+            } else if (titleProp.rich_text && titleProp.rich_text[0]) {
+              taskTitle = titleProp.rich_text[0].plain_text || titleProp.rich_text[0].text?.content || 'Task';
+              break;
+            }
+          }
+        }
+      }
+      
+      // シンプルなコメント: タスクタイトル（リンク）
+      const comment = `[${taskTitle}](${taskPageUrl})`;
+      
+      await github.rest.issues.createComment({
+        ...context.repo,
+        issue_number: context.payload.pull_request.number,
+        body: comment
+      });
+      
+      console.log('Posted comment on PR with task link');
+    } else {
+      // タスクが見つからない場合はPRページのみ
+      const prPageUrl = `https://notion.so/${prPage.id.replace(/-/g, '')}`;
+      const comment = `📝 [PR Page created in Notion](${prPageUrl})\n(No linked task found)`;
+      
+      await github.rest.issues.createComment({
+        ...context.repo,
+        issue_number: context.payload.pull_request.number,
+        body: comment
+      });
+      
+      console.log('Posted comment on PR (no task found)');
     }
-    
-    await github.rest.issues.createComment({
-      ...context.repo,
-      issue_number: context.payload.pull_request.number,
-      body: comment
-    });
-    
-    console.log('Posted comment on PR');
   } catch (error) {
     console.error('Error posting comment:', error);
     // Don't throw, as this is not critical
