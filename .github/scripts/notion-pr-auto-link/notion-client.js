@@ -65,11 +65,11 @@ class NotionClient {
     
     const properties = {};
     
-    // Title property
+    // Title property - Add PR number prefix
     properties[config.prTitleProperty || 'Title'] = {
       title: [{
         text: {
-          content: prData.title
+          content: `#${prData.number} ${prData.title}`
         }
       }]
     };
@@ -242,6 +242,17 @@ class NotionClient {
       
       // Prepare properties to update
       const properties = {};
+      
+      // Update Title with PR number prefix
+      if (prData.title) {
+        properties[config.prTitleProperty || 'Title'] = {
+          title: [{
+            text: {
+              content: `#${prData.number} ${prData.title}`
+            }
+          }]
+        };
+      }
       
       // Update State if provided
       if (prData.state) {
