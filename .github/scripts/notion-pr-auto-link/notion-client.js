@@ -138,7 +138,7 @@ class NotionClient {
   /**
    * Find task page by task ID
    * @param {string} databaseId - Notion database ID
-   * @param {string} taskId - Task ID (e.g., TASK-40)
+   * @param {string} taskId - ID value (e.g., TASK-40)
    * @returns {Promise<Object|null>} Task page object or null if not found
    */
   async findTaskPage(databaseId, taskId) {
@@ -148,7 +148,7 @@ class NotionClient {
     const query = {
       database_id: databaseId,
       filter: {
-        property: 'Task ID',
+        property: 'ID',
         rich_text: {
           contains: taskId
         }

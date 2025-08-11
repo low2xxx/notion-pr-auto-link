@@ -17,7 +17,7 @@ inputs:
     description: 'Notion Task Database ID'
     required: true
   task-id-prefix:
-    description: 'Task ID prefix (default: TASK)'
+    description: 'ID prefix (default: TASK)'
     required: false
     default: 'TASK'
   task-id-pattern:
