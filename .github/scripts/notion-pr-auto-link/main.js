@@ -44,9 +44,16 @@ async function main(context, github) {
     const notion = new NotionClient(config.notionToken, config);
     
     // Find task page first
+    console.log(`Searching for task with ID: "${taskId}"`);
+    console.log(`Using property name: "${config.taskIdProperty || 'ID'}"`);
+    console.log(`In database: ${config.taskDatabaseId}`);
+    
     const taskPage = await notion.findTaskPage(config.taskDatabaseId, taskId, config);
     if (!taskPage) {
       console.log(`Task ${taskId} not found in Notion. Skipping.`);
+      console.log('Check: 1) Task exists with this exact ID');
+      console.log('      2) Property name matches exactly (case-sensitive)');
+      console.log('      3) Integration has access to the database');
       return;  // 処理を完全にスキップ
     }
     

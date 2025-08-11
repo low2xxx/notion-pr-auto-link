@@ -174,23 +174,86 @@ class NotionClient {
     if (!databaseId) throw new Error('databaseId is required');
     if (!taskId) throw new Error('taskId is required');
     
-    const query = {
-      database_id: databaseId,
-      filter: {
-        property: config.taskIdProperty || 'ID',
-        rich_text: {
-          contains: taskId
-        }
-      }
-    };
+    const propertyName = config.taskIdProperty || 'ID';
+    console.log(`Searching for task "${taskId}" in property "${propertyName}"`);
     
-    try {
-      const response = await this._queryDatabase(query);
-      return response.results.length > 0 ? response.results[0] : null;
-    } catch (error) {
-      console.error('Error finding task page:', error);
-      return null;
+    // Try different property types
+    const searchStrategies = [
+      // 1. Rich text search
+      {
+        name: 'rich_text',
+        filter: {
+          property: propertyName,
+          rich_text: { contains: taskId }
+        }
+      },
+      // 2. Title search
+      {
+        name: 'title',
+        filter: {
+          property: propertyName,
+          title: { contains: taskId }
+        }
+      },
+      // 3. Formula string search
+      {
+        name: 'formula',
+        filter: {
+          property: propertyName,
+          formula: {
+            string: { contains: taskId }
+          }
+        }
+      },
+      // 4. If property is "ID" and it's unique_id, search all and match manually
+      {
+        name: 'manual_unique_id',
+        filter: null,
+        manual: true
+      }
+    ];
+    
+    for (const strategy of searchStrategies) {
+      try {
+        if (strategy.manual && propertyName === 'ID') {
+          // For unique_id, fetch all and search manually
+          console.log('Trying manual search for unique_id...');
+          const query = {
+            database_id: databaseId,
+            page_size: 100
+          };
+          const response = await this._queryDatabase(query);
+          
+          for (const page of response.results) {
+            if (page.properties[propertyName]?.unique_id) {
+              const uniqueId = page.properties[propertyName].unique_id;
+              const fullId = `${uniqueId.prefix}-${uniqueId.number}`;
+              if (fullId === taskId) {
+                console.log(`Found task with unique_id: ${fullId}`);
+                return page;
+              }
+            }
+          }
+        } else if (strategy.filter) {
+          // Try with filter
+          console.log(`Trying ${strategy.name} search...`);
+          const query = {
+            database_id: databaseId,
+            filter: strategy.filter
+          };
+          const response = await this._queryDatabase(query);
+          if (response && response.results && response.results.length > 0) {
+            console.log(`Found task using ${strategy.name} search`);
+            return response.results[0];
+          }
+        }
+      } catch (error) {
+        console.log(`${strategy.name} search failed, trying next...`);
+      }
     }
+    
+    console.log('Task not found with any search strategy');
+    return null;
   }
 
   /**
