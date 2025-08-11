@@ -179,15 +179,25 @@ class NotionClient {
     
     // Try different property types
     const searchStrategies = [
-      // 1. Rich text search
+      // 1. Formula string search (for formula properties)
+      {
+        name: 'formula',
+        filter: {
+          property: propertyName,
+          formula: {
+            string: { equals: taskId }
+          }
+        }
+      },
+      // 2. Rich text search
       {
         name: 'rich_text',
         filter: {
           property: propertyName,
-          rich_text: { contains: taskId }
+          rich_text: { equals: taskId }
         }
       },
-      // 2. Title search
+      // 3. Title search
       {
         name: 'title',
         filter: {
@@ -195,19 +205,15 @@ class NotionClient {
           title: { contains: taskId }
         }
       },
-      // 3. Formula string search
+      // 4. Unique ID direct search (if taskId contains number)
       {
-        name: 'formula',
-        filter: {
-          property: propertyName,
-          formula: {
-            string: { contains: taskId }
-          }
-        }
+        name: 'unique_id',
+        filter: null,
+        useUniqueId: true
       },
-      // 4. If property is "ID" and it's unique_id, search all and match manually
+      // 5. If property is "ID" and unique_id search failed, use limited pagination
       {
-        name: 'manual_unique_id',
+        name: 'unique_id_pagination',
         filter: null,
         manual: true
       }
@@ -215,24 +221,75 @@ class NotionClient {
     
     for (const strategy of searchStrategies) {
       try {
-        if (strategy.manual && propertyName === 'ID') {
-          // For unique_id, fetch all and search manually
-          console.log('Trying manual search for unique_id...');
-          const query = {
-            database_id: databaseId,
-            page_size: 100
-          };
-          const response = await this._queryDatabase(query);
-          
-          for (const page of response.results) {
-            if (page.properties[propertyName]?.unique_id) {
-              const uniqueId = page.properties[propertyName].unique_id;
-              const fullId = `${uniqueId.prefix}-${uniqueId.number}`;
-              if (fullId === taskId) {
-                console.log(`Found task with unique_id: ${fullId}`);
-                return page;
+        if (strategy.useUniqueId) {
+          // Try unique_id search if taskId contains a number
+          const match = taskId.match(/(\d+)$/);
+          if (match && propertyName === 'ID') {
+            const uniqueNumber = parseInt(match[1], 10);
+            console.log(`Trying unique_id search for number: ${uniqueNumber}`);
+            
+            const query = {
+              database_id: databaseId,
+              filter: {
+                property: propertyName,
+                unique_id: {
+                  equals: uniqueNumber
+                }
+              }
+            };
+            
+            const response = await this._queryDatabase(query);
+            if (response && response.results && response.results.length > 0) {
+              // Verify the full ID matches
+              const page = response.results[0];
+              if (page.properties[propertyName]?.unique_id) {
+                const uniqueId = page.properties[propertyName].unique_id;
+                const fullId = `${uniqueId.prefix}-${uniqueId.number}`;
+                if (fullId === taskId) {
+                  console.log(`Found task using unique_id search: ${fullId}`);
+                  return page;
+                }
               }
             }
+          }
+        } else if (strategy.manual && propertyName === 'ID') {
+          // For unique_id, use limited pagination (max 500 items)
+          console.log('Property "ID" might be unique_id type, using pagination search...');
+          console.log('NOTE: For better performance, consider adding a Formula property');
+          
+          let hasMore = true;
+          let nextCursor = undefined;
+          let totalSearched = 0;
+          const maxPages = 5; // Max 5 pages × 100 items = 500 items
+          
+          while (hasMore && totalSearched < maxPages) {
+            const query = {
+              database_id: databaseId,
+              page_size: 100,
+              start_cursor: nextCursor
+            };
+            
+            const response = await this._queryDatabasePaginated(query);
+            totalSearched++;
+            
+            for (const page of response.results) {
+              if (page.properties[propertyName]?.unique_id) {
+                const uniqueId = page.properties[propertyName].unique_id;
+                const fullId = `${uniqueId.prefix}-${uniqueId.number}`;
+                if (fullId === taskId) {
+                  console.log(`Found task with unique_id: ${fullId}`);
+                  return page;
+                }
+              }
+            }
+            
+            hasMore = response.has_more;
+            nextCursor = response.next_cursor;
+          }
+          
+          if (hasMore) {
+            console.log(`Searched ${totalSearched * 100} tasks, didn't find ${taskId}`);
+            console.log('Consider using Formula property for better performance');
           }
         } else if (strategy.filter) {
           // Try with filter
@@ -248,7 +305,8 @@ class NotionClient {
           }
         }
       } catch (error) {
-        console.log(`${strategy.name} search failed, trying next...`);
+        console.log(`${strategy.name} search failed: ${error.message}`);
+        // Continue to next strategy
       }
     }
     
@@ -397,6 +455,7 @@ class NotionClient {
       req.end();
     });
   }
+
 }
 
 module.exports = {
