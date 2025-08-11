@@ -5,12 +5,14 @@ class NotionClient {
   /**
    * Initialize Notion client
    * @param {string} token - Notion API token
+   * @param {Object} config - Configuration object
    */
-  constructor(token) {
+  constructor(token, config = {}) {
     if (!token) {
       throw new Error('Notion API token is required');
     }
     this.token = token;
+    this.config = config;
     this.baseUrl = 'https://api.notion.com/v1';
     this.headers = {
       'Authorization': `Bearer ${token}`,
@@ -25,14 +27,14 @@ class NotionClient {
    * @param {number} prNumber - GitHub PR number
    * @returns {Promise<Object|null>} PR page object or null if not found
    */
-  async findPRPage(databaseId, prNumber) {
+  async findPRPage(databaseId, prNumber, config = this.config) {
     if (!databaseId) throw new Error('databaseId is required');
     if (!prNumber) throw new Error('prNumber is required');
     
     const query = {
       database_id: databaseId,
       filter: {
-        property: 'PR Number',
+        property: config.prNumberProperty || 'PR Number',
         number: {
           equals: prNumber
         }
@@ -54,36 +56,43 @@ class NotionClient {
    * @param {Object} prData - PR data object
    * @returns {Promise<Object>} Created page object
    */
-  async createPRPage(databaseId, prData) {
+  async createPRPage(databaseId, prData, config = this.config) {
     if (!databaseId) throw new Error('databaseId is required');
     if (!prData) throw new Error('prData is required');
     if (!prData.number) throw new Error('PR number is required');
     if (!prData.title) throw new Error('PR title is required');
     if (!prData.url) throw new Error('PR URL is required');
     
-    const properties = {
-      'Title': {
-        title: [{
-          text: {
-            content: prData.title
-          }
-        }]
-      },
-      'PR Number': {
-        number: prData.number
-      },
-      'URL': {
-        url: prData.url
-      },
-      'State': {
-        select: {
-          name: prData.state || 'Open'
+    const properties = {};
+    
+    // Title property
+    properties[config.prTitleProperty || 'Title'] = {
+      title: [{
+        text: {
+          content: prData.title
         }
+      }]
+    };
+    
+    // PR Number property
+    properties[config.prNumberProperty || 'PR Number'] = {
+      number: prData.number
+    };
+    
+    // URL property
+    properties[config.prUrlProperty || 'URL'] = {
+      url: prData.url
+    };
+    
+    // State property
+    properties[config.prStateProperty || 'State'] = {
+      select: {
+        name: prData.state || 'Open'
       }
     };
     
     if (prData.authorName) {
-      properties['Author'] = {
+      properties[config.prAuthorProperty || 'Author'] = {
         rich_text: [{
           text: {
             content: prData.authorName
@@ -93,7 +102,7 @@ class NotionClient {
     }
     
     if (prData.createdAt) {
-      properties['Created At'] = {
+      properties[config.prCreatedAtProperty || 'Created At'] = {
         date: {
           start: prData.createdAt
         }
@@ -115,7 +124,7 @@ class NotionClient {
    * @param {string} [relationProperty='Related Task'] - Name of relation property
    * @returns {Promise<Object>} Updated PR page object
    */
-  async linkPRToTask(prPageId, taskPageId, relationProperty = 'Related Task') {
+  async linkPRToTask(prPageId, taskPageId, relationProperty = 'Related Task', config = this.config) {
     if (!prPageId) throw new Error('prPageId is required');
     if (!taskPageId) throw new Error('taskPageId is required');
     
@@ -141,14 +150,14 @@ class NotionClient {
    * @param {string} taskId - ID value (e.g., TASK-40)
    * @returns {Promise<Object|null>} Task page object or null if not found
    */
-  async findTaskPage(databaseId, taskId) {
+  async findTaskPage(databaseId, taskId, config = this.config) {
     if (!databaseId) throw new Error('databaseId is required');
     if (!taskId) throw new Error('taskId is required');
     
     const query = {
       database_id: databaseId,
       filter: {
-        property: 'ID',
+        property: config.taskIdProperty || 'ID',
         rich_text: {
           contains: taskId
         }
@@ -170,13 +179,13 @@ class NotionClient {
    * @param {Object} prData - PR data object
    * @returns {Promise<Object>} Existing or created page object
    */
-  async findOrCreatePRPage(databaseId, prData) {
+  async findOrCreatePRPage(databaseId, prData, config = this.config) {
     if (!databaseId) throw new Error('databaseId is required');
     if (!prData) throw new Error('prData is required');
     if (!prData.number) throw new Error('PR number is required');
     
     // First, try to find existing PR page
-    const existingPage = await this.findPRPage(databaseId, prData.number);
+    const existingPage = await this.findPRPage(databaseId, prData.number, config);
     if (existingPage) {
       console.log(`Found existing PR page for PR #${prData.number}`);
       return existingPage;
@@ -184,7 +193,7 @@ class NotionClient {
     
     // If not found, create new PR page
     console.log(`Creating new PR page for PR #${prData.number}`);
-    return await this.createPRPage(databaseId, prData);
+    return await this.createPRPage(databaseId, prData, config);
   }
 
   /**

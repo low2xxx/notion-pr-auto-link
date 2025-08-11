@@ -61,16 +61,23 @@ PRとNotionタスクを自動連携するGitHub Actionsワークフロー
 2. 「Add connections」を選択
 3. 作成したIntegrationを選択して追加
 
-### ステップ3: GitHub Secretsの設定
+### ステップ3: GitHub Secrets/Variablesの設定
 
-リポジトリの Settings > Secrets and variables > Actions で以下を設定：
+リポジトリの Settings > Secrets and variables > Actions で設定：
 
+#### Secrets（機密情報）
 | Secret名 | 説明 | 例 |
 |---------|------|-----|
 | `NOTION_TOKEN` | Notion Integration Token | `secret_abc...` |
 | `NOTION_PR_DB_ID` | PRデータベースのID | `abc123...` |
 | `NOTION_TASK_DB_ID` | タスクデータベースのID | `def456...` |
-| `TASK_ID_PREFIX` | （オプション）タスクIDプレフィックス | `JIRA` |
+
+#### Variables（公開可能な設定）※オプション
+| Variable名 | 説明 | 例 |
+|-----------|------|-----|
+| `TASK_ID_PREFIX` | タスクIDプレフィックス | `JIRA` |
+| `PR_TITLE_PROPERTY` | タイトルプロパティ名 | `タイトル` |
+| `TASK_ID_PROPERTY` | タスクIDプロパティ名 | `タスクID` |
 
 **データベースIDの取得方法：**
 1. Notionでデータベースページを開く

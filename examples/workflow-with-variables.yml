@@ -1,0 +1,42 @@
+name: Notion PR Auto Link
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, closed]
+
+jobs:
+  link-to-notion:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      - name: Link PR to Notion
+        uses: low2xxx/notion-pr-auto-link@main
+        with:
+          # Secretsから機密情報を取得
+          notion-token: ${{ secrets.NOTION_TOKEN }}
+          pr-database-id: ${{ secrets.NOTION_PR_DB_ID }}
+          task-database-id: ${{ secrets.NOTION_TASK_DB_ID }}
+        env:
+          # Variablesから設定値を取得
+          TASK_ID_PREFIX: ${{ vars.TASK_ID_PREFIX }}
+          
+          # PRデータベースのプロパティ名
+          PR_TITLE_PROPERTY: ${{ vars.PR_TITLE_PROPERTY }}
+          PR_NUMBER_PROPERTY: ${{ vars.PR_NUMBER_PROPERTY }}
+          PR_URL_PROPERTY: ${{ vars.PR_URL_PROPERTY }}
+          PR_STATE_PROPERTY: ${{ vars.PR_STATE_PROPERTY }}
+          PR_AUTHOR_PROPERTY: ${{ vars.PR_AUTHOR_PROPERTY }}
+          PR_CREATED_AT_PROPERTY: ${{ vars.PR_CREATED_AT_PROPERTY }}
+          
+          # タスクデータベースのプロパティ名
+          TASK_ID_PROPERTY: ${{ vars.TASK_ID_PROPERTY }}
+          
+          # リレーションプロパティ名
+          PR_RELATION_PROPERTY: ${{ vars.PR_RELATION_PROPERTY }}
+          TASK_RELATION_PROPERTY: ${{ vars.TASK_RELATION_PROPERTY }}
