@@ -210,12 +210,6 @@ class NotionClient {
         name: 'unique_id',
         filter: null,
         useUniqueId: true
-      },
-      // 5. If property is "ID" and unique_id search failed, use limited pagination
-      {
-        name: 'unique_id_pagination',
-        filter: null,
-        manual: true
       }
     ];
     
@@ -251,45 +245,6 @@ class NotionClient {
                 }
               }
             }
-          }
-        } else if (strategy.manual && propertyName === 'ID') {
-          // For unique_id, use limited pagination (max 500 items)
-          console.log('Property "ID" might be unique_id type, using pagination search...');
-          console.log('NOTE: For better performance, consider adding a Formula property');
-          
-          let hasMore = true;
-          let nextCursor = undefined;
-          let totalSearched = 0;
-          const maxPages = 5; // Max 5 pages × 100 items = 500 items
-          
-          while (hasMore && totalSearched < maxPages) {
-            const query = {
-              database_id: databaseId,
-              page_size: 100,
-              start_cursor: nextCursor
-            };
-            
-            const response = await this._queryDatabasePaginated(query);
-            totalSearched++;
-            
-            for (const page of response.results) {
-              if (page.properties[propertyName]?.unique_id) {
-                const uniqueId = page.properties[propertyName].unique_id;
-                const fullId = `${uniqueId.prefix}-${uniqueId.number}`;
-                if (fullId === taskId) {
-                  console.log(`Found task with unique_id: ${fullId}`);
-                  return page;
-                }
-              }
-            }
-            
-            hasMore = response.has_more;
-            nextCursor = response.next_cursor;
-          }
-          
-          if (hasMore) {
-            console.log(`Searched ${totalSearched * 100} tasks, didn't find ${taskId}`);
-            console.log('Consider using Formula property for better performance');
           }
         } else if (strategy.filter) {
           // Try with filter
