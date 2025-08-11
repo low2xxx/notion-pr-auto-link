@@ -182,95 +182,45 @@ class NotionClient {
     const propertyName = config.taskIdProperty || 'ID';
     console.log(`Searching for task "${taskId}" in property "${propertyName}"`);
     
-    // Try different property types
-    const searchStrategies = [
-      // 1. Formula string search (for formula properties)
-      {
-        name: 'formula',
-        filter: {
-          property: propertyName,
-          formula: {
-            string: { equals: taskId }
-          }
-        }
-      },
-      // 2. Rich text search
-      {
-        name: 'rich_text',
-        filter: {
-          property: propertyName,
-          rich_text: { equals: taskId }
-        }
-      },
-      // 3. Title search
-      {
-        name: 'title',
-        filter: {
-          property: propertyName,
-          title: { contains: taskId }
-        }
-      },
-      // 4. Unique ID direct search (if taskId contains number)
-      {
-        name: 'unique_id',
-        filter: null,
-        useUniqueId: true
-      }
-    ];
-    
-    for (const strategy of searchStrategies) {
-      try {
-        if (strategy.useUniqueId) {
-          // Try unique_id search if taskId contains a number
-          const match = taskId.match(/(\d+)$/);
-          if (match && propertyName === 'ID') {
-            const uniqueNumber = parseInt(match[1], 10);
-            console.log(`Trying unique_id search for number: ${uniqueNumber}`);
-            
-            const query = {
-              database_id: databaseId,
-              filter: {
-                property: propertyName,
-                unique_id: {
-                  equals: uniqueNumber
-                }
+    // Use unique_id search only when property is 'ID'
+    if (propertyName === 'ID') {
+      // Try unique_id search if taskId contains a number
+      const match = taskId.match(/(\d+)$/);
+      if (match) {
+        const uniqueNumber = parseInt(match[1], 10);
+        console.log(`Using unique_id search for number: ${uniqueNumber}`);
+        
+        try {
+          const query = {
+            database_id: databaseId,
+            filter: {
+              property: propertyName,
+              unique_id: {
+                equals: uniqueNumber
               }
-            };
-            
-            const response = await this._queryDatabase(query);
-            if (response && response.results && response.results.length > 0) {
-              // Verify the full ID matches
-              const page = response.results[0];
-              if (page.properties[propertyName]?.unique_id) {
-                const uniqueId = page.properties[propertyName].unique_id;
-                const fullId = `${uniqueId.prefix}-${uniqueId.number}`;
-                if (fullId === taskId) {
-                  console.log(`Found task using unique_id search: ${fullId}`);
-                  return page;
-                }
+            }
+          };
+          
+          const response = await this._queryDatabase(query);
+          if (response && response.results && response.results.length > 0) {
+            // Verify the full ID matches
+            const page = response.results[0];
+            if (page.properties[propertyName]?.unique_id) {
+              const uniqueId = page.properties[propertyName].unique_id;
+              const fullId = `${uniqueId.prefix}-${uniqueId.number}`;
+              if (fullId === taskId) {
+                console.log(`Found task using unique_id search: ${fullId}`);
+                return page;
               }
             }
           }
-        } else if (strategy.filter) {
-          // Try with filter
-          console.log(`Trying ${strategy.name} search...`);
-          const query = {
-            database_id: databaseId,
-            filter: strategy.filter
-          };
-          const response = await this._queryDatabase(query);
-          if (response && response.results && response.results.length > 0) {
-            console.log(`Found task using ${strategy.name} search`);
-            return response.results[0];
-          }
+        } catch (error) {
+          console.log(`unique_id search failed: ${error.message}`);
         }
-      } catch (error) {
-        console.log(`${strategy.name} search failed: ${error.message}`);
-        // Continue to next strategy
       }
     }
     
-    console.log('Task not found with any search strategy');
+    console.log('Task not found');
     return null;
   }
 
