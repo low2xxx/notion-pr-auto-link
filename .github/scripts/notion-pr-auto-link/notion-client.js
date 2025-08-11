@@ -91,6 +91,16 @@ class NotionClient {
       }
     };
     
+    // Task relation if taskPageId is provided
+    if (prData.taskPageId && config.taskRelationProperty) {
+      properties[config.taskRelationProperty || 'Related Task'] = {
+        relation: [
+          { id: prData.taskPageId }
+        ]
+      };
+      console.log(`Adding task relation to PR creation: ${prData.taskPageId}`);
+    }
+    
     if (prData.authorName) {
       properties[config.prAuthorProperty || 'Author'] = {
         rich_text: [{
@@ -128,6 +138,9 @@ class NotionClient {
     if (!prPageId) throw new Error('prPageId is required');
     if (!taskPageId) throw new Error('taskPageId is required');
     
+    console.log(`Linking PR ${prPageId} to Task ${taskPageId}`);
+    console.log(`Using relation property: "${relationProperty}"`);
+    
     const properties = {
       [relationProperty]: {
         relation: [
@@ -137,9 +150,16 @@ class NotionClient {
     };
     
     try {
-      return await this._updatePage(prPageId, properties);
+      const result = await this._updatePage(prPageId, properties);
+      console.log('Successfully linked PR to task');
+      return result;
     } catch (error) {
-      console.error('Error linking PR to task:', error);
+      console.error('Error linking PR to task:', error.message);
+      // より詳細なエラー情報を出力
+      if (error.message && error.message.includes('validation_error')) {
+        console.error('Validation error - check if relation property name is correct');
+        console.error('Expected property name:', relationProperty);
+      }
       throw error;
     }
   }

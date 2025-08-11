@@ -43,20 +43,7 @@ async function main(context, github) {
     // Initialize Notion client with config
     const notion = new NotionClient(config.notionToken, config);
     
-    // Find or create PR page
-    const prData = {
-      number: prNumber,
-      title: prTitle,
-      url: prUrl,
-      state: prState,
-      authorName: authorName,
-      createdAt: createdAt
-    };
-    
-    const prPage = await notion.findOrCreatePRPage(config.prDatabaseId, prData, config);
-    console.log(`PR page ID: ${prPage.id}`);
-    
-    // Find task page
+    // Find task page first
     const taskPage = await notion.findTaskPage(config.taskDatabaseId, taskId, config);
     if (!taskPage) {
       console.log(`Task ${taskId} not found in Notion. Skipping.`);
@@ -65,8 +52,19 @@ async function main(context, github) {
     
     console.log(`Task page ID: ${taskPage.id}`);
     
-    // Link PR to task
-    await notion.linkPRToTask(prPage.id, taskPage.id, config.taskRelationProperty, config);
+    // Find or create PR page with task relation
+    const prData = {
+      number: prNumber,
+      title: prTitle,
+      url: prUrl,
+      state: prState,
+      authorName: authorName,
+      createdAt: createdAt,
+      taskPageId: taskPage.id  // タスクIDを追加
+    };
+    
+    const prPage = await notion.findOrCreatePRPage(config.prDatabaseId, prData, config);
+    console.log(`PR page ID: ${prPage.id}`);
     console.log('Successfully linked PR to task');
     
     // Post comment on PR
