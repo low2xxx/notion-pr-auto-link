@@ -52,7 +52,7 @@ PRとNotionタスクを自動連携するGitHub Actionsワークフロー
 
 | プロパティ名 | タイプ | 必須 | 説明 |
 |------------|-------|------|------|
-| Task ID | テキスト | ✅ | タスクの識別子（例: TASK-123） |
+| ID | テキスト | ✅ | タスクの識別子（例: TASK-123） |
 | Related PRs | リレーション | ✅ | PR DBへのリレーション（自動作成） |
 
 #### データベースへのIntegration追加
@@ -77,13 +77,36 @@ PRとNotionタスクを自動連携するGitHub Actionsワークフロー
 2. URLをコピー: `https://notion.so/workspace/[DATABASE_ID]?v=...`
 3. `[DATABASE_ID]`の部分（32文字）を使用
 
-### ステップ4: ワークフローファイルの配置
+### ステップ4: ワークフローの導入
 
-このリポジトリの `.github/` ディレクトリをそのままコピーするか、必要なファイルを個別に配置：
+#### GitHub Actionとして使用
+
+```yaml
+name: PR to Notion
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, closed]
+
+jobs:
+  link-to-notion:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: low2xxx/notion-pr-auto-link@main
+        with:
+          notion-token: ${{ secrets.NOTION_TOKEN }}
+          pr-database-id: ${{ secrets.NOTION_PR_DB_ID }}
+          task-database-id: ${{ secrets.NOTION_TASK_DB_ID }}
+```
+
+#### オプション: ファイルを直接コピー
+
+カスタマイズが必要な場合:
 
 ```bash
 # リポジトリをクローン
-git clone https://github.com/yourusername/notion-pr-auto-link.git
+git clone https://github.com/low2xxx/notion-pr-auto-link.git
 
 # 必要なファイルをコピー
 cp -r notion-pr-auto-link/.github your-project/
@@ -226,9 +249,8 @@ node .github/scripts/notion-pr-auto-link/tests/test-integration.js
 ## プロジェクト構成
 
 ```
+action.yml                           # GitHub Action 定義
 .github/
-├── workflows/
-│   └── notion-pr-link.yml          # GitHub Actions ワークフロー定義
 └── scripts/
     └── notion-pr-auto-link/
         ├── main.js                  # メインエントリーポイント

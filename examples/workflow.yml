@@ -1,0 +1,28 @@
+name: Notion PR Auto Link
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, closed]
+
+jobs:
+  link-to-notion:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      - name: Link PR to Notion
+        uses: low2xxx/notion-pr-auto-link@main
+        with:
+          notion-token: ${{ secrets.NOTION_TOKEN }}
+          pr-database-id: ${{ secrets.NOTION_PR_DB_ID }}
+          task-database-id: ${{ secrets.NOTION_TASK_DB_ID }}
+          # Optional settings
+          task-id-prefix: ${{ secrets.TASK_ID_PREFIX }}
+          # task-id-pattern: '(CUSTOM-\d+)'
+          # pr-relation-property: 'Related PRs'
+          # task-relation-property: 'Related Task'

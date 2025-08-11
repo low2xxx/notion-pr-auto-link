@@ -24,7 +24,7 @@ GitHub ActionsとNotion APIを連携して、PRを自動的にNotionタスクと
 - Related Task (リレーション → タスクDB)
 
 #### タスクデータベースの設定
-- Task ID プロパティ (テキスト) が必要
+- ID プロパティ (テキスト) が必要
 - Related PRs プロパティ (リレーション → PR DB) が自動作成される
 
 ### 2. GitHub Secretsの設定

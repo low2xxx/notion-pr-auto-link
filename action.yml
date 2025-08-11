@@ -1,0 +1,58 @@
+name: 'Notion PR Auto Link'
+description: 'Automatically link GitHub PRs to Notion tasks'
+author: 'low2xxx'
+
+branding:
+  icon: 'link'
+  color: 'blue'
+
+inputs:
+  notion-token:
+    description: 'Notion Integration Token'
+    required: true
+  pr-database-id:
+    description: 'Notion PR Database ID'
+    required: true
+  task-database-id:
+    description: 'Notion Task Database ID'
+    required: true
+  task-id-prefix:
+    description: 'ID prefix (default: TASK)'
+    required: false
+    default: 'TASK'
+  task-id-pattern:
+    description: 'Custom task ID pattern'
+    required: false
+  pr-relation-property:
+    description: 'PR relation property name'
+    required: false
+    default: 'Related PRs'
+  task-relation-property:
+    description: 'Task relation property name'
+    required: false
+    default: 'Related Task'
+  github-token:
+    description: 'GitHub token for PR comments'
+    required: true
+    default: ${{ github.token }}
+
+runs:
+  using: 'composite'
+  steps:    
+    - name: Run Notion PR Link
+      uses: actions/github-script@v7
+      env:
+        NOTION_TOKEN: ${{ inputs.notion-token }}
+        NOTION_PR_DB_ID: ${{ inputs.pr-database-id }}
+        NOTION_TASK_DB_ID: ${{ inputs.task-database-id }}
+        TASK_ID_PREFIX: ${{ inputs.task-id-prefix }}
+        TASK_ID_PATTERN: ${{ inputs.task-id-pattern }}
+        PR_RELATION_PROPERTY: ${{ inputs.pr-relation-property }}
+        TASK_RELATION_PROPERTY: ${{ inputs.task-relation-property }}
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const path = require('path');
+          const scriptPath = path.join('${{ github.action_path }}', '.github', 'scripts', 'notion-pr-auto-link', 'main.js');
+          const { main } = require(scriptPath);
+          await main(context, github);
