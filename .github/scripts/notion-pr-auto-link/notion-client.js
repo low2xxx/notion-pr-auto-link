@@ -240,15 +240,34 @@ class NotionClient {
     if (existingPage) {
       console.log(`Found existing PR page for PR #${prData.number}`);
       
+      // Prepare properties to update
+      const properties = {};
+      
+      // Update State if provided
+      if (prData.state) {
+        properties[config.prStateProperty || 'State'] = {
+          select: {
+            name: prData.state
+          }
+        };
+        console.log(`Updating PR state to: ${prData.state}`);
+      }
+      
       // Update relation if taskPageId is provided
       if (prData.taskPageId) {
         const relationProperty = config.taskRelationProperty || 'Related Task';
-        console.log(`Updating existing PR page with task relation:`);
-        console.log(`  PR Page ID: ${existingPage.id}`);
-        console.log(`  Task Page ID: ${prData.taskPageId}`);
-        console.log(`  Relation Property: ${relationProperty}`);
-        
-        await this.linkPRToTask(existingPage.id, prData.taskPageId, relationProperty, config);
+        properties[relationProperty] = {
+          relation: [
+            { id: prData.taskPageId }
+          ]
+        };
+        console.log(`Updating task relation: ${prData.taskPageId}`);
+      }
+      
+      // Update page if there are properties to update
+      if (Object.keys(properties).length > 0) {
+        console.log(`Updating existing PR page:`, properties);
+        await this._updatePage(existingPage.id, properties);
       }
       
       return existingPage;
