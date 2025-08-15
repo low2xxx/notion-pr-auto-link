@@ -101,10 +101,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: low2xxx/notion-pr-auto-link@main
-        with:
-          notion-token: ${{ secrets.NOTION_TOKEN }}
-          pr-database-id: ${{ secrets.NOTION_PR_DB_ID }}
-          task-database-id: ${{ secrets.NOTION_TASK_DB_ID }}
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_PR_DB_ID: ${{ secrets.NOTION_PR_DB_ID }}
+          NOTION_TASK_DB_ID: ${{ secrets.NOTION_TASK_DB_ID }}
 ```
 
 #### オプション: ファイルを直接コピー
@@ -157,19 +157,34 @@ PRを作成後、以下を確認：
 
 ### 環境変数
 
-ワークフローファイル（`.github/workflows/notion-pr-link.yml`）で設定可能：
+すべての設定は環境変数として`env:`セクションで指定します：
 
 ```yaml
-env:
-  # タスクIDのプレフィックス（デフォルト: TASK）
-  TASK_ID_PREFIX: 'JIRA'
-  
-  # カスタムパターン（正規表現）
-  TASK_ID_PATTERN: '(PROJ-\d{4})'
-  
-  # リレーションプロパティ名
-  PR_RELATION_PROPERTY: 'Related PRs'
-  TASK_RELATION_PROPERTY: 'Related Task'
+- uses: low2xxx/notion-pr-auto-link@main
+  env:
+    # 必須設定
+    NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+    NOTION_PR_DB_ID: ${{ secrets.NOTION_PR_DB_ID }}
+    NOTION_TASK_DB_ID: ${{ secrets.NOTION_TASK_DB_ID }}
+    
+    # タスクID設定（オプション）
+    TASK_ID_PREFIX: 'JIRA'  # デフォルト: TASK
+    TASK_ID_PATTERN: '(PROJ-\d{4})'  # カスタムパターン
+    
+    # リレーションプロパティ名（オプション）
+    PR_RELATION_PROPERTY: 'Related PRs'  # デフォルト値
+    TASK_RELATION_PROPERTY: 'Related Task'  # デフォルト値
+    
+    # PRプロパティ名（オプション）
+    PR_TITLE_PROPERTY: 'Title'
+    PR_NUMBER_PROPERTY: 'PR Number'
+    PR_URL_PROPERTY: 'URL'
+    PR_STATE_PROPERTY: 'State'
+    PR_AUTHOR_PROPERTY: 'Author'
+    PR_CREATED_AT_PROPERTY: 'Created At'
+    
+    # タスクプロパティ名（オプション）
+    TASK_ID_PROPERTY: 'ID'
 ```
 
 ### タスクIDパターンの例

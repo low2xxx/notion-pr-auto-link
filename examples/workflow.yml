@@ -17,12 +17,14 @@ jobs:
       
       - name: Link PR to Notion
         uses: low2xxx/notion-pr-auto-link@main
-        with:
-          notion-token: ${{ secrets.NOTION_TOKEN }}
-          pr-database-id: ${{ secrets.NOTION_PR_DB_ID }}
-          task-database-id: ${{ secrets.NOTION_TASK_DB_ID }}
-          # Optional settings
-          task-id-prefix: ${{ secrets.TASK_ID_PREFIX }}
-          # task-id-pattern: '(CUSTOM-\d+)'
-          # pr-relation-property: 'Related PRs'
-          # task-relation-property: 'Related Task'
+        env:
+          # 必須設定
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_PR_DB_ID: ${{ secrets.NOTION_PR_DB_ID }}
+          NOTION_TASK_DB_ID: ${{ secrets.NOTION_TASK_DB_ID }}
+          
+          # オプション設定の例（必要に応じてコメントアウトを解除）
+          # TASK_ID_PREFIX: 'JIRA'  # デフォルト: 'TASK'
+          # TASK_ID_PATTERN: '(CUSTOM-\d+)'  # カスタムパターン
+          # PR_RELATION_PROPERTY: 'PR一覧'  # デフォルト: 'Related PRs'
+          # TASK_RELATION_PROPERTY: '関連タスク'  # デフォルト: 'Related Task'

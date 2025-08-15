@@ -17,14 +17,19 @@ jobs:
       
       - name: Link PR to Notion
         uses: low2xxx/notion-pr-auto-link@main
-        with:
-          # Secretsから機密情報を取得
-          notion-token: ${{ secrets.NOTION_TOKEN }}
-          pr-database-id: ${{ secrets.NOTION_PR_DB_ID }}
-          task-database-id: ${{ secrets.NOTION_TASK_DB_ID }}
         env:
+          # Secretsから機密情報を取得
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_PR_DB_ID: ${{ secrets.NOTION_PR_DB_ID }}
+          NOTION_TASK_DB_ID: ${{ secrets.NOTION_TASK_DB_ID }}
+          
           # Variablesから設定値を取得
           TASK_ID_PREFIX: ${{ vars.TASK_ID_PREFIX }}
+          TASK_ID_PATTERN: ${{ vars.TASK_ID_PATTERN }}
+          
+          # リレーションプロパティ名
+          PR_RELATION_PROPERTY: ${{ vars.PR_RELATION_PROPERTY }}
+          TASK_RELATION_PROPERTY: ${{ vars.TASK_RELATION_PROPERTY }}
           
           # PRデータベースのプロパティ名
           PR_TITLE_PROPERTY: ${{ vars.PR_TITLE_PROPERTY }}
@@ -36,7 +41,3 @@ jobs:
           
           # タスクデータベースのプロパティ名
           TASK_ID_PROPERTY: ${{ vars.TASK_ID_PROPERTY }}
-          
-          # リレーションプロパティ名
-          PR_RELATION_PROPERTY: ${{ vars.PR_RELATION_PROPERTY }}
-          TASK_RELATION_PROPERTY: ${{ vars.TASK_RELATION_PROPERTY }}
